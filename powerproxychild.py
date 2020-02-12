@@ -5,28 +5,31 @@ from multiprocessing import Process, Pipe
 
 class powerproxychild:
 
-	socket.setdefaulttimeout(100) # in seconds
-
-	proxyList = [];
+	proxyList = []
+	testsite = ""
 	begin = 0
 	end = 0
 	botnum = -1
-	queue = 0;
+	queue = 0
+	showerrors = False
 
-	def is_bad_proxy(self, pip):    
+	def is_bad_proxy(self, pip, num):    
 		try:        
 		    proxy_handler = urllib2.ProxyHandler({'http': pip})        
 		    opener = urllib2.build_opener(proxy_handler)
 		    opener.addheaders = [('User-agent', 'Mozilla/5.0')]
 		    urllib2.install_opener(opener)        
-		    req=urllib2.Request('http://www.reddit.com')  # change the url address here
+		    req=urllib2.Request(str(self.testsite))  # change the url address here
 		    sock=urllib2.urlopen(req)
 		except urllib2.HTTPError, e:        
 		    #print 'Error code: ', e.code
 		    lasterror=e.code
 		    return e.code
 		except Exception, detail:
-		    print "ERROR:", detail
+		    
+			if self.showerror:
+				print "[", self.botnum, "]", "testing:", num, "/", self.end," : ",pip,":",
+				print "ERROR:", detail
 		    return 1
 		return 0
 	
@@ -34,8 +37,8 @@ class powerproxychild:
 		print "[", self.botnum, "] STARTING from index: ", self.begin, " to index: ", self.end
 		for i in range(self.begin, self.end):
 			item = self.proxyList[i]
-			print "[", self.botnum, "]", "testing proxy:", i, "/", self.end," : ",item,":",
-			if self.is_bad_proxy(item):
+			
+			if self.is_bad_proxy(item, i):
 				self.begin = self.begin + 1
 				self.begin = self.begin - 1
 			else:
@@ -46,9 +49,12 @@ class powerproxychild:
 					myfile.write(item + "\n")
 		print "[", self.botnum, "] FINISHED"
 
-	def __init__(self, botnum, begin, end, proxyList):
+	def __init__(self, botnum, begin, end, proxyList, sockettimeout, testsite, showerrors):
 		self.proxyList = proxyList
 		self.begin = begin
 		self.end = end
 		self.botnum = botnum
+		self.testsite = testsite
+		self.showerrors = showerrors
+		socket.setdefaulttimeout(sockettimeout) # in seconds
 		#self.queue = q
